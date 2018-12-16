@@ -1,4 +1,4 @@
-# 3DGNN
+# 3DGNN for RGB-D segmentation
 This is the Pytorch implementation of [3D Graph Neural Networks for RGBD Semantic Segmentation](http://openaccess.thecvf.com/content_ICCV_2017/papers/Qi_3D_Graph_Neural_ICCV_2017_paper.pdf): 
 
 ![](https://github.com/xjqicuhk/3DGNN/blob/master/overallpipeline.png)
