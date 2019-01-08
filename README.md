@@ -4,9 +4,9 @@ This is the Pytorch implementation of [3D Graph Neural Networks for RGBD Semanti
 ![](https://github.com/xjqicuhk/3DGNN/blob/master/overallpipeline.png)
 
 ### Data Preparation
-1. Download the prepared training data (prepared hdf5 data) (https://mycuhk-my.sharepoint.com/:u:/g/personal/1155051740_link_cuhk_edu_hk/EVGJ_xXvtNVCh7spid94AmQB_byhW49i-VH_vqx8oZbrZQ?e=COhKwr).
-2. Download the testing data  (https://mycuhk-my.sharepoint.com/:u:/g/personal/1155051740_link_cuhk_edu_hk/EVdjeNQqnINOj359HN8WXDgBsouAqSoZC1lRgkSbPNo2hA?e=e0w2sO).
-3. Download the original provided data (https://mycuhk-my.sharepoint.com/:u:/g/personal/1155051740_link_cuhk_edu_hk/EZuJHYVcULRNkQ3qm34ugIoBg-69Vprq2POiaat4u5ZLXQ?e=QmWXec).
+1. [NYU Depth V1](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v1.html)
+2. [NYU Depth V2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)
+3. [SUNRGB-D](http://rgbd.cs.princeton.edu/challenge.html)
 4. You need transfer depth images to hha by yourself and save in `datasets/data/hha/`. [Tools](https://github.com/charlesCXK/Depth2HHA)
 
 ### Emviroment
