@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair, _quadruple
 from torch.autograd import Variable
+import config
+
+ENCODER_PARAMS = config.ENCODER_PARAMS
+DECODER_PARAMS = config.DECODER_PARAMS
 
 class MedianPool2d(nn.Module):
     """ Median pool (usable as median filter when stride=1) module.
@@ -49,278 +53,6 @@ class MedianPool2d(nn.Module):
         x = x.contiguous().view(x.size()[:4] + (-1,)).median(dim=-1)[0]
         return x
 
-ENCODER_PARAMS = [
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 32,
-        'output_channels': 64,
-        'downsample': True,
-        'dropout_prob': 0.01
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 64,
-        'output_channels': 64,
-        'downsample': False,
-        'dropout_prob': 0.01
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 64,
-        'output_channels': 64,
-        'downsample': False,
-        'dropout_prob': 0.01
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 64,
-        'output_channels': 64,
-        'downsample': False,
-        'dropout_prob': 0.01
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 64,
-        'output_channels': 64,
-        'downsample': False,
-        'dropout_prob': 0.01
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 64,
-        'output_channels': 128,
-        'downsample': True,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 2
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 4
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 8
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 16
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 2
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 4
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 8
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    },
-    {
-        'internal_scale': 4,
-        'use_relu': True,
-        'asymmetric': False,
-        'dilated': False,  # 16
-        'input_channels': 128,
-        'output_channels': 128,
-        'downsample': False,
-        'dropout_prob': 0.1
-    }
-]
-
-DECODER_PARAMS = [
-    {
-        'input_channels': 128,
-        'output_channels': 128,
-        'upsample': False,
-        'pooling_module': None
-    },
-    {
-        'input_channels': 128,
-        'output_channels': 64,
-        'upsample': True,
-        'pooling_module': None
-    },
-    {
-        'input_channels': 64,
-        'output_channels': 64,
-        'upsample': False,
-        'pooling_module': None
-    },
-    {
-        'input_channels': 64,
-        'output_channels': 64,
-        'upsample': False,
-        'pooling_module': None
-    },
-    {
-        'input_channels': 64,
-        'output_channels': 32,
-        'upsample': True,
-        'pooling_module': None
-    },
-    {
-        'input_channels': 32,
-        'output_channels': 32,
-        'upsample': False,
-        'pooling_module': None
-    }
-]
-
 
 class EnetInitialBlock(nn.Module):
     def __init__(self):
@@ -356,7 +88,6 @@ class EnetEncoderMainPath(nn.Module):
 
         self.input_batch_norm = nn.BatchNorm2d(internal_channels, eps=1e-03)
 
-        # TODO: use dilated and asymmetric convolutions, as in the original implementation.  For now just add a 3x3 convolution.
         self.middle_conv = nn.Conv2d(
             internal_channels, internal_channels, 3, stride=1, bias=True,
             dilation=1 if (not dilated or dilated is None) else dilated,
@@ -610,7 +341,6 @@ class EnetGnn(nn.Module):
     def __init__(self, mlp_num_layers,use_gpu):
         super().__init__()
 
-        # TODO check if these parameters are correct and infer them automatically
         self.median_pool = MedianPool2d(kernel_size=8, stride=8, padding=0, same=False)
 
         self.g_rnn_layers = nn.ModuleList([nn.Linear(128, 128) for l in range(mlp_num_layers)])
@@ -623,14 +353,14 @@ class EnetGnn(nn.Module):
     # adapted from https://discuss.pytorch.org/t/build-your-own-loss-function-in-pytorch/235/6
     # (x - y)^2 = x^2 - 2*x*y + y^2
     def get_knn_indices(self, batch_mat, k):
-        r = torch.bmm(batch_mat, batch_mat.permute(0, 2, 1)) 
+        r = torch.bmm(batch_mat, batch_mat.permute(0, 2, 1)) # 将tensor的维度换位
         N = r.size()[0]
         HW = r.size()[1]
         if self.use_gpu:
             batch_indices = torch.zeros((N, HW, k)).cuda()
         else:
             batch_indices = torch.zeros((N, HW, k))
-        for idx, val in enumerate(r):  # TODO would be nice not to for-loop this
+        for idx, val in enumerate(r):
             # get the diagonal elements
             diag = val.diag().unsqueeze(0)
             diag = diag.expand_as(val)
@@ -651,7 +381,7 @@ class EnetGnn(nn.Module):
 
         # extract and resize depth image as horizontal disparity channel from HHA encoded image
         depth = original_input[:, 3, :, :]  # N 8H 8W
-        depth = depth.view(depth.size()[0], 1, depth.size()[1], depth.size()[2])  # N 1 8H 8W 
+        depth = depth.view(depth.size()[0], 1, depth.size()[1], depth.size()[2])  # N 1 8H 8W 相当于numpy中resize()
         depth_resize = self.median_pool(depth)  # N 1 H W
         x_coords = xy[:, 0, :, :]
         x_coords = x_coords.view(x_coords.size()[0], 1, x_coords.size()[1], x_coords.size()[2])
@@ -661,7 +391,7 @@ class EnetGnn(nn.Module):
         y_coords = self.median_pool(y_coords)  # N 1 H W
 
         # 3D projection --> point cloud
-        proj_3d = torch.cat((x_coords, y_coords, depth_resize), 1)  # N 3 W H  
+        proj_3d = torch.cat((x_coords, y_coords, depth_resize), 1)  # N 3 W H  按列放堆叠
         proj_3d = proj_3d.view(N, 3, H*W).permute(0, 2, 1).contiguous()  # N H*W 3
 
         # get k nearest neighbors
