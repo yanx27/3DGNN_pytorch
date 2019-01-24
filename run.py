@@ -11,21 +11,36 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from datasets import nyudv2
 from models import Model
+import config
+from tqdm import tqdm
+import argparse
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.backends.cudnn.benchmark = True
-torch.cuda.set_device(0)
 
-def main():
-    model_name = '3dgnn_enet'
-    current_path = os.getcwd()
-    logger = logging.getLogger(model_name)
-    log_path = current_path + '/artifacts/'+ str(datetime.datetime.now().strftime('%Y-%m-%d-%H')).replace(' ', '/') + '/'
+def parse_args():
+    '''PARAMETERS'''
+    parser = argparse.ArgumentParser('CapsNet')
+    parser.add_argument('--num_epochs', default=50,type=int,
+                        help='Number of epoch')
+    parser.add_argument('--batchsize', type=int, default=4,
+                        help='batch size in training')
+    parser.add_argument('--pretrain', type=str, default=None,
+                        help='Direction for pretrained weight')
+    parser.add_argument('--gpu', type=str, default='0',
+                        help='specify gpu device')
+
+    return parser.parse_args()
+
+def main(args):
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    logger = logging.getLogger('3dgnn')
+    log_path = './artifacts/'+ str(datetime.datetime.now().strftime('%Y-%m-%d-%H')).replace(' ', '/') + '/'
     print('log path is:',log_path)
     if not os.path.exists(log_path):
         os.makedirs(log_path)
         os.makedirs(log_path + 'save/')
-    hdlr = logging.FileHandler(log_path + model_name + '.log')
+    hdlr = logging.FileHandler(log_path + 'log.txt')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
@@ -36,77 +51,47 @@ def main():
     label_to_idx = {'<UNK>': 0, 'beam': 1, 'board': 2, 'bookcase': 3, 'ceiling': 4, 'chair': 5, 'clutter': 6,
                     'column': 7,
                     'door': 8, 'floor': 9, 'sofa': 10, 'table': 11, 'wall': 12, 'window': 13}
+
     idx_to_label = {0: '<UNK>', 1: 'beam', 2: 'board', 3: 'bookcase', 4: 'ceiling', 5: 'chair', 6: 'clutter',
                     7: 'column',
                     8: 'door', 9: 'floor', 10: 'sofa', 11: 'table', 12: 'wall', 13: 'window'}
 
-    '''Data Loader parameter'''
-    # Batch size
-    batch_size_tr = 4
-    batch_size_va = 4
-    # Multiple threads loading data
-    workers_tr = 4
-    workers_va = 4
-    # Data augmentation
-    flip_prob = 0.5
-    crop_size = 0
 
-    dataset_tr = nyudv2.Dataset(flip_prob=flip_prob,crop_type='Random',crop_size=crop_size)
-    dataloader_tr = DataLoader(dataset_tr, batch_size=batch_size_tr, shuffle=True,
-                               num_workers=workers_tr, drop_last=False, pin_memory=True)
 
-    dataset_va = nyudv2.Dataset(flip_prob=0.0,crop_type='Center',crop_size=crop_size)
-    dataloader_va = DataLoader(dataset_va, batch_size=batch_size_va, shuffle=False,
-                               num_workers=workers_va, drop_last=False, pin_memory=True)
-    cv2.setNumThreads(workers_tr)
+    dataset_tr = nyudv2.Dataset(flip_prob=config.flip_prob,crop_type='Random',crop_size=config.crop_size)
+    dataloader_tr = DataLoader(dataset_tr, batch_size=args.batchsize, shuffle=True,
+                               num_workers=config.workers_tr, drop_last=False, pin_memory=True)
 
-    class_weights = [0.0]+[1.0 for i in range(13)]
-    nclasses = len(class_weights)
-    num_epochs = 50
+    dataset_va = nyudv2.Dataset(flip_prob=0.0,crop_type='Center',crop_size=config.crop_size)
+    dataloader_va = DataLoader(dataset_va, batch_size=args.batchsize, shuffle=False,
+                               num_workers=config.workers_va, drop_last=False, pin_memory=True)
+    cv2.setNumThreads(config.workers_tr)
 
-    '''GNN parameter'''
-    use_gnn = True
-    gnn_iterations = 3
-    gnn_k = 64
-    mlp_num_layers = 1
-
-    '''Model parameter'''
-    use_bootstrap_loss = False
-    bootstrap_rate = 0.25
-    use_gpu = True
 
     logger.info("Preparing model...")
     print("Preparing model...")
-    model = Model(nclasses, mlp_num_layers,use_gpu)
-    loss = nn.NLLLoss(reduce=not use_bootstrap_loss, weight=torch.FloatTensor(class_weights))
+    model = Model(config.nclasses, config.mlp_num_layers,config.use_gpu)
+    loss = nn.NLLLoss(reduce=not config.use_bootstrap_loss, weight=torch.FloatTensor(config.class_weights))
     softmax = nn.Softmax(dim=1)
     log_softmax = nn.LogSoftmax(dim=1)
 
-    if use_gpu:
+    if config.use_gpu:
         model = model.cuda()
         loss = loss.cuda()
         softmax = softmax.cuda()
         log_softmax = log_softmax.cuda()
 
-    '''Optimizer parameter'''
-    base_initial_lr = 5e-4
-    gnn_initial_lr = 1e-3
-    betas = [0.9, 0.999]
-    eps = 1e-08
-    weight_decay = 1e-4
-    lr_schedule_type = 'exp'
-    lr_decay = 0.9
-    lr_patience = 10
+
 
     optimizer = torch.optim.Adam([{'params': model.decoder.parameters()},
-                                  {'params': model.gnn.parameters(), 'lr': gnn_initial_lr}],
-                                 lr=base_initial_lr, betas=betas, eps=eps, weight_decay=weight_decay)
+                                  {'params': model.gnn.parameters(), 'lr': config.gnn_initial_lr}],
+                                 lr=config.base_initial_lr, betas=config.betas, eps=config.eps, weight_decay=config.weight_decay)
 
-    if lr_schedule_type == 'exp':
-        lambda1 = lambda epoch: pow((1 - ((epoch - 1) / num_epochs)), lr_decay)
+    if config.lr_schedule_type == 'exp':
+        lambda1 = lambda epoch: pow((1 - ((epoch - 1) / args.num_epochs)), config.lr_decay)
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
-    elif lr_schedule_type == 'plateau':
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=lr_decay, patience=lr_patience)
+    elif config.lr_schedule_type == 'plateau':
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=config.lr_decay, patience=config.lr_patience)
     else:
         print('bad scheduler')
         exit(1)
@@ -141,24 +126,24 @@ def main():
 
                 input = x.permute(0, 3, 1, 2).contiguous()
                 xy = xy.permute(0, 3, 1, 2).contiguous()
-                if use_gpu:
+                if config.use_gpu:
                     input = input.cuda()
                     xy = xy.cuda()
                     target = target.cuda()
 
-                output = model(input, gnn_iterations=gnn_iterations, k=gnn_k, xy=xy, use_gnn=use_gnn)
+                output = model(input, gnn_iterations=config.gnn_iterations, k=config.gnn_k, xy=xy, use_gnn=config.use_gnn)
 
-                if use_bootstrap_loss:
+                if config.use_bootstrap_loss:
                     loss_per_pixel = loss.forward(log_softmax(output.float()), target)
                     topk, indices = torch.topk(loss_per_pixel.view(output.size()[0], -1),
-                                               int((crop_size ** 2) * bootstrap_rate))
+                                               int((config.crop_size ** 2) * config.bootstrap_rate))
                     loss_ = torch.mean(topk)
                 else:
                     loss_ = loss.forward(log_softmax(output.float()), target)
                 loss_sum += loss_
 
                 pred = output.permute(0, 2, 3, 1).contiguous()
-                pred = pred.view(-1, nclasses)
+                pred = pred.view(-1, config.nclasses)
                 pred = softmax(pred)
                 pred_max_val, pred_arg_max = pred.max(1)
 
@@ -172,7 +157,6 @@ def main():
 
             confusion_matrix = confusion_matrix.cpu().numpy().reshape((14, 14))
             class_iou = np.zeros(14)
-            # we ignore void values
             confusion_matrix[0, :] = np.zeros(14)
             confusion_matrix[:, 0] = np.zeros(14)
             for i in range(1, 14):
@@ -182,9 +166,9 @@ def main():
         return loss_sum.item(), class_iou, confusion_matrix
 
     '''Training parameter'''
-    model_to_load = None
-    logger.info("num_epochs: %d", num_epochs)
-    print("Number of epochs: %d"%num_epochs)
+    model_to_load = args.pretrain
+    logger.info("num_epochs: %d", args.num_epochs)
+    print("Number of epochs: %d"%args.num_epochs)
     interval_to_show = 100
 
     train_losses = []
@@ -199,14 +183,11 @@ def main():
         print("Starting training from scratch...")
 
     '''Training'''
-    for epoch in range(1, num_epochs + 1):
+    for epoch in range(1, args.num_epochs + 1):
         batch_loss_avg = 0
-        if lr_schedule_type == 'exp':
+        if config.lr_schedule_type == 'exp':
             scheduler.step(epoch)
-        for batch_idx, rgbd_label_xy in enumerate(dataloader_tr):
-
-            sys.stdout.write('\rTraining data set... {}/{}'.format(batch_idx + 1, len(dataloader_tr)))
-
+        for batch_idx, rgbd_label_xy in tqdm(enumerate(dataloader_tr),smoothing=0.9):
             x = rgbd_label_xy[0]
             target = rgbd_label_xy[1].long()
             xy = rgbd_label_xy[2]
@@ -216,7 +197,7 @@ def main():
             input = x.permute(0, 3, 1, 2).contiguous()
             input = input.type(torch.FloatTensor)
 
-            if use_gpu:
+            if config.use_gpu:
                 input = input.cuda()
                 xy = xy.cuda()
                 target = target.cuda()
@@ -226,12 +207,12 @@ def main():
             optimizer.zero_grad()
             model.train()
 
-            output = model(input, gnn_iterations=gnn_iterations, k=gnn_k, xy=xy, use_gnn=use_gnn)
+            output = model(input, gnn_iterations=config.gnn_iterations, k=config.gnn_k, xy=xy, use_gnn=config.use_gnn)
 
-            if use_bootstrap_loss:
+            if config.use_bootstrap_loss:
                 loss_per_pixel = loss.forward(log_softmax(output.float()), target)
                 topk, indices = torch.topk(loss_per_pixel.view(output.size()[0], -1),
-                                           int((crop_size ** 2) * bootstrap_rate))
+                                           int((config.crop_size ** 2) * config.bootstrap_rate))
                 loss_ = torch.mean(topk)
             else:
                 loss_ = loss.forward(log_softmax(output.float()), target)
@@ -257,7 +238,7 @@ def main():
         eval_loss, class_iou, confusion_matrix = eval_set(dataloader_va)
         eval_losses.append(eval_loss)
 
-        if lr_schedule_type == 'plateau':
+        if config.lr_schedule_type == 'plateau':
             scheduler.step(eval_loss)
         print('Learning ...')
         logger.info("E%dB%d Def learning rate: %s", epoch, batch_idx, get_current_learning_rates()[0])
@@ -276,11 +257,10 @@ def main():
         logger.info("E%dB%d Confusion matrix:", epoch, batch_idx)
         logger.info(confusion_matrix)
 
-
     logger.info("Finished training!")
     logger.info("Saving model...")
     print('Saving final model...')
-    torch.save(model.state_dict(), log_path + '/save/3dgnn_enet_finish.pth')
+    torch.save(model.state_dict(), log_path + '/save/3dgnn_finish.pth')
     eval_loss, class_iou, confusion_matrix = eval_set(dataloader_va)
     logger.info("Eval loss: %s", eval_loss)
     logger.info("Class IoU:")
@@ -288,6 +268,6 @@ def main():
         logger.info("%+10s: %-10s" % (idx_to_label[cl], class_iou[cl]))
     logger.info("Mean IoU: %s", np.mean(class_iou[1:]))
 
-
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    main(args)
