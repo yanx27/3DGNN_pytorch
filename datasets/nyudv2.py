@@ -28,8 +28,7 @@ class Dataset(Dataset):
 
         self.rgb_images = rgb_images_fr
         self.label_images = label_images_fr
-        # self.rgb_images = rgb_images_fr[:,40:-40,45:-10]
-        # self.label_images = label_images_fr[:,40:-40,45:-10]
+
 
     def __len__(self):
         return len(self.rgb_images)
