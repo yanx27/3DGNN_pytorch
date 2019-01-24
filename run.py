@@ -20,7 +20,7 @@ torch.backends.cudnn.benchmark = True
 
 def parse_args():
     '''PARAMETERS'''
-    parser = argparse.ArgumentParser('CapsNet')
+    parser = argparse.ArgumentParser('3dgnn')
     parser.add_argument('--num_epochs', default=50,type=int,
                         help='Number of epoch')
     parser.add_argument('--batchsize', type=int, default=4,
