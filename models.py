@@ -134,7 +134,7 @@ class EnetEncoderOtherPath(nn.Module):
         super().__init__()
 
         self.__dict__.update(locals())
-        del self.self # self.__dict__.update(locals())这名会把self加到self的属性里面去
+        del self.self 
 
         if downsample:
             self.pool = nn.MaxPool2d(2, stride=2, return_indices=True)
@@ -154,7 +154,7 @@ class EnetEncoderOtherPath(nn.Module):
 
 
 class EnetEncoderModule(nn.Module):
-    def __init__(self, **kwargs): # **kwargs：任意个关键字参数（key-word args，键值对），类型为dict
+    def __init__(self, **kwargs):
         super().__init__()
         self.main = EnetEncoderMainPath(**kwargs)
         self.other = EnetEncoderOtherPath(**kwargs)
@@ -177,7 +177,7 @@ class EnetEncoder(nn.Module):
         for i, params in enumerate(params):
             layer_name = 'encoder_{:02d}'.format(i)
             layer = EnetEncoderModule(**params)
-            super().__setattr__(layer_name, layer) # 给对象的属性赋值，若属性不存在，先创建再赋值
+            super().__setattr__(layer_name, layer)
             self.layers.append(layer)
 
         self.output_conv = nn.Conv2d(
@@ -353,7 +353,7 @@ class EnetGnn(nn.Module):
     # adapted from https://discuss.pytorch.org/t/build-your-own-loss-function-in-pytorch/235/6
     # (x - y)^2 = x^2 - 2*x*y + y^2
     def get_knn_indices(self, batch_mat, k):
-        r = torch.bmm(batch_mat, batch_mat.permute(0, 2, 1)) # 将tensor的维度换位
+        r = torch.bmm(batch_mat, batch_mat.permute(0, 2, 1)) 
         N = r.size()[0]
         HW = r.size()[1]
         if self.use_gpu:
@@ -381,7 +381,7 @@ class EnetGnn(nn.Module):
 
         # extract and resize depth image as horizontal disparity channel from HHA encoded image
         depth = original_input[:, 3, :, :]  # N 8H 8W
-        depth = depth.view(depth.size()[0], 1, depth.size()[1], depth.size()[2])  # N 1 8H 8W 相当于numpy中resize()
+        depth = depth.view(depth.size()[0], 1, depth.size()[1], depth.size()[2])  
         depth_resize = self.median_pool(depth)  # N 1 H W
         x_coords = xy[:, 0, :, :]
         x_coords = x_coords.view(x_coords.size()[0], 1, x_coords.size()[1], x_coords.size()[2])
@@ -391,7 +391,7 @@ class EnetGnn(nn.Module):
         y_coords = self.median_pool(y_coords)  # N 1 H W
 
         # 3D projection --> point cloud
-        proj_3d = torch.cat((x_coords, y_coords, depth_resize), 1)  # N 3 W H  按列放堆叠
+        proj_3d = torch.cat((x_coords, y_coords, depth_resize), 1)  
         proj_3d = proj_3d.view(N, 3, H*W).permute(0, 2, 1).contiguous()  # N H*W 3
 
         # get k nearest neighbors
