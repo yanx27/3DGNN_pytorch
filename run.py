@@ -35,7 +35,7 @@ def parse_args():
 def main(args):
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     logger = logging.getLogger('3dgnn')
-    log_path = './artifacts/'+ str(datetime.datetime.now().strftime('%Y-%m-%d-%H')).replace(' ', '/') + '/'
+    log_path = './experiment/'+ str(datetime.datetime.now().strftime('%Y-%m-%d-%H')).replace(' ', '/') + '/'
     print('log path is:',log_path)
     if not os.path.exists(log_path):
         os.makedirs(log_path)
@@ -81,8 +81,6 @@ def main(args):
         softmax = softmax.cuda()
         log_softmax = log_softmax.cuda()
 
-
-
     optimizer = torch.optim.Adam([{'params': model.decoder.parameters()},
                                   {'params': model.gnn.parameters(), 'lr': config.gnn_initial_lr}],
                                  lr=config.base_initial_lr, betas=config.betas, eps=config.eps, weight_decay=config.weight_decay)
@@ -115,9 +113,7 @@ def main(args):
 
             start_time = time.time()
 
-            for batch_idx, rgbd_label_xy in enumerate(dataloader):
-
-                sys.stdout.write('\rEvaluating test set... {}/{}'.format(batch_idx + 1, len(dataloader)))
+            for batch_idx, rgbd_label_xy in tqdm(enumerate(dataloader),total = len(dataloader),smoothing=0.9):
                 x = rgbd_label_xy[0]
                 xy = rgbd_label_xy[2]
                 target = rgbd_label_xy[1].long()
@@ -187,7 +183,7 @@ def main(args):
         batch_loss_avg = 0
         if config.lr_schedule_type == 'exp':
             scheduler.step(epoch)
-        for batch_idx, rgbd_label_xy in tqdm(enumerate(dataloader_tr),smoothing=0.9):
+        for batch_idx, rgbd_label_xy in tqdm(enumerate(dataloader_tr),total = len(dataloader_tr),smoothing=0.9):
             x = rgbd_label_xy[0]
             target = rgbd_label_xy[1].long()
             xy = rgbd_label_xy[2]
